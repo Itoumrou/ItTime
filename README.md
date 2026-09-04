@@ -1,20 +1,11 @@
-# ItTime V0.4 — iPhone PWA
+# ItTime V1.0
 
-Everything from V0.3 plus:
-- PWA manifest
-- iPhone home-screen metadata
-- Standalone app mode
-- App icons
-- Offline caching/service worker
-- Mobile-first touch sizing
-- Install help card
-- Existing local data + JSON export
+V1.0 adds workload guardrails and the first real iPhone notification layer.
 
-## Important
-For PWA installation on iPhone, ItTime must be served from a web address (HTTPS). Opening `index.html` directly as a file is fine for testing, but Safari cannot install a local file as a PWA.
-
-## Zero-cost deployment
-A free static hosting service can serve these files over HTTPS. GitHub Pages is a suitable option.
-
-## iPhone
-Open the hosted ItTime URL in Safari → Share → Add to Home Screen → Add.
+- Fixed live Today double-counting.
+- Event dates expand automatically from completed sessions.
+- Added workload/rest warnings.
+- Added notification permission and a real OS-level test notification.
+- Added configurable long-work and daily-limit notification settings.
+- Preserved existing localStorage data.
+- Fully closed-app iPhone reminders still require Web Push infrastructure (VAPID + push endpoint/server).
