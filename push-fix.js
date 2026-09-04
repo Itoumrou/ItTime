@@ -1,0 +1,38 @@
+/* ItTime Reliable Push - hardened iPhone setup and diagnostics */
+(()=>{
+ const KEY="ittime_v03";
+ const SERVER="https://ittime-push.trabi2717.workers.dev";
+ const read=()=>{let s={};try{s=JSON.parse(localStorage.getItem(KEY)||"{}")}catch{};s.settings=s.settings||{};s.settings.push=Object.assign({serverUrl:SERVER,apiToken:"",enabled:false,subscribed:false,publicKey:""},s.settings.push||{});return s};
+ const write=s=>localStorage.setItem(KEY,JSON.stringify(s));
+ const toast=m=>typeof window.toast==="function"?window.toast(m):alert(m);
+ const device=()=>{let id=localStorage.getItem("ittime_push_device_id");if(!id){id=crypto.randomUUID?crypto.randomUUID():"d_"+Date.now()+"_"+Math.random().toString(36).slice(2);localStorage.setItem("ittime_push_device_id",id)}return id};
+ const b64=s=>{let pad="=".repeat((4-s.length%4)%4),r=atob((s+pad).replace(/-/g,"+").replace(/_/g,"/")),a=new Uint8Array(r.length);for(let i=0;i<r.length;i++)a[i]=r.charCodeAt(i);return a};
+ async function api(path,body={}){const s=read(),p=s.settings.push;if(!p.apiToken)throw Error("Enter your API token first.");const r=await fetch((p.serverUrl||SERVER).replace(/\/$/,"")+path,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+p.apiToken},body:JSON.stringify(Object.assign({deviceId:device()},body))});const text=await r.text();if(!r.ok)throw Error(text||("HTTP "+r.status));try{return JSON.parse(text)}catch{return {ok:true}}}
+ function setStatus(text){const card=document.getElementById("ittimePushCard");if(!card)return;const el=card.querySelector("[data-push-status]");if(el)el.textContent=text;}
+ function card(){return document.getElementById("ittimePushCard")}
+ function addTestButton(){const c=card();if(!c||c.querySelector("#ittimePushTest"))return;const actions=c.querySelector(".actions");if(!actions)return;const b=document.createElement("button");b.className="btn secondary";b.id="ittimePushTest";b.type="button";b.textContent="Send Test Notification";actions.appendChild(b);b.addEventListener("click",async()=>{b.disabled=true;b.textContent="Sending…";try{await api("/test");toast("Test notification sent. Check your iPhone Notification Center.")}catch(e){toast("Test notification failed: "+e.message)}finally{b.disabled=false;b.textContent="Send Test Notification"}})}
+ async function saveConfig(){const s=read(),p=s.settings.push;p.serverUrl=(document.getElementById("pushUrl")?.value||SERVER).trim().replace(/\/$/,"");p.apiToken=(document.getElementById("pushToken")?.value||"").trim();if(!p.serverUrl)p.serverUrl=SERVER;s.settings.push=p;write(s);setStatus(p.apiToken?"Ready to connect":"Not configured");toast("Push configuration saved");}
+ async function enable(){const s=read(),p=s.settings.push;p.serverUrl=(document.getElementById("pushUrl")?.value||p.serverUrl||SERVER).trim().replace(/\/$/,"");p.apiToken=(document.getElementById("pushToken")?.value||p.apiToken||"").trim();s.settings.push=p;write(s);
+  if(!p.apiToken)return toast("Enter your API token first.");
+  const standalone=window.matchMedia?.("(display-mode: standalone)").matches||window.navigator.standalone;
+  if(!standalone)return toast("Add ItTime to the iPhone Home Screen first, then open ItTime from its icon.");
+  if(!("serviceWorker"in navigator)||!("PushManager"in window)||!("Notification"in window))return toast("Web Push is not available here. Open the installed ItTime Home Screen app.");
+  try{
+   setStatus("Requesting notification permission…");
+   const perm=Notification.permission==="granted"?"granted":await Notification.requestPermission();
+   if(perm!=="granted")throw Error("Notification permission was not granted. Check iPhone Settings → Notifications → ItTime.");
+   const base=p.serverUrl,kr=await fetch(base+"/vapid-public-key",{cache:"no-store"});
+   if(!kr.ok)throw Error("Push server is unreachable (HTTP "+kr.status+").");
+   const j=await kr.json();if(!j.publicKey)throw Error("Push server returned no VAPID public key.");p.publicKey=j.publicKey;
+   const reg=await navigator.serviceWorker.ready;let sub=await reg.pushManager.getSubscription();
+   if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64(p.publicKey)});
+   const result=await api("/subscribe",{subscription:sub.toJSON()});if(result?.ok===false)throw Error(result.error||"Subscription failed");
+   p.enabled=true;p.subscribed=true;s.settings.push=p;write(s);setStatus("Connected");addTestButton();toast("Reliable Push connected");
+  }catch(e){console.error(e);p.enabled=false;p.subscribed=false;s.settings.push=p;write(s);setStatus("Connection failed");toast("Push connection failed: "+e.message)}
+ }
+ function intercept(){document.addEventListener("click",e=>{const b=e.target?.closest?.("button[data-action]");if(!b)return;const a=b.dataset.action;if(a!=="savePushConfig"&&a!=="enableReliablePush")return;e.preventDefault();e.stopImmediatePropagation();if(a==="savePushConfig")saveConfig();else enable()},true)}
+ function decorate(){const c=card();if(!c)return;const p=read().settings.push;const input=document.getElementById("pushUrl");if(input&&!input.value)input.value=p.serverUrl||SERVER;const status=c.querySelector(".muted:last-child");if(status&&!status.dataset.pushStatus){status.dataset.pushStatus="1";status.innerHTML='Status: <b data-push-status>Not connected</b>';}if(p.enabled&&p.subscribed){setStatus("Connected");addTestButton()}else if(p.apiToken)setStatus("Ready to connect")}
+ intercept();
+ const mo=new MutationObserver(()=>decorate());
+ window.addEventListener("load",()=>{decorate();mo.observe(document.body,{childList:true,subtree:true});});
+})();
