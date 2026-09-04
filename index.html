@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0b0d10">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ItTime">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111827">
+  <title>ItTime</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="apple-touch-icon" href="icon-192.png">
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div>
+      <div class="brand">ItTime</div>
+      <div class="subtitle">Work. Rest. Remember why.</div>
+    </div>
+    <div class="status-dot" id="statusDot"></div>
+  </header>
+
+  <main id="app"></main>
+
+  <nav class="tabbar">
+    <button class="tab active" data-tab="today">Today</button>
+    <button class="tab" data-tab="history">History</button>
+    <button class="tab" data-tab="insights">Insights</button>
+    <button class="tab" data-tab="settings">Settings</button>
+  </nav>
+</div>
+
+<div id="modalRoot"></div>
+<script src="app.js"></script>
+</body>
+</html>
