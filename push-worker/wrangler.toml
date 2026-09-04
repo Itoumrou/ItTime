@@ -1,0 +1,11 @@
+name="ittime-push"
+main="worker.js"
+compatibility_date="2026-09-04"
+
+[[durable_objects.bindings]]
+name="REMINDER_DO"
+class_name="ReminderDevice"
+
+[[migrations]]
+tag="v1"
+new_sqlite_classes=["ReminderDevice"]
